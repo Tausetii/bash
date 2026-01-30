@@ -90,6 +90,8 @@ fi
 
 # Use an sshd config drop-in (Debian supports sshd_config.d on modern OpenSSH).
 # This avoids mangling the main file and is easy to revert.
+mkdir -p /run/sshd
+chmod 755 /run/sshd
 mkdir -p /etc/ssh/sshd_config.d
 cat > /etc/ssh/sshd_config.d/99-hardening.conf <<EOF
 # Blue-team hardening
