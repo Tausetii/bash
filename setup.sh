@@ -8,7 +8,7 @@ echo "[+] Starting full service setup..."
 ##################################
 echo "[+] Ensuring ICMP is allowed..."
 # Do NOT block ping — default Ubuntu allows it
-# systemctl -w net.ipv4.icmp_echo_ignore_all=0
+systemctl  net.ipv4.icmp_echo_ignore_all=0
 
 ##################################
 # SSH (22/tcp)
