@@ -19,39 +19,64 @@ fi
 ##################################
 # SSH (22/tcp)
 ##################################
-echo "[+] Setting up SSH..."
+apt-get install -y --no-install-recommends openssh-server
 
-apt update -y
-apt install -y openssh-server
+# Create user if missing.
+if ! id "${SSH_USER}" &>/dev/null; then
+  useradd -m -s /bin/bash "${SSH_USER}"
+  passwd -l "${SSH_USER}" >/dev/null 2>&1 || true   # lock password so it cannot be used for password login
+fi
 
-# Enable legacy RSA keys
-grep -q "^PubkeyAcceptedAlgorithms" /etc/ssh/sshd_config || \
-echo "PubkeyAcceptedAlgorithms +ssh-rsa" >> /etc/ssh/sshd_config
+# Ensure .ssh directory and permissions.
+install -d -m 700 -o "${SSH_USER}" -g "${SSH_USER}" "/home/${SSH_USER}/.ssh"
+touch "/home/${SSH_USER}/.ssh/authorized_keys"
+chown "${SSH_USER}:${SSH_USER}" "/home/${SSH_USER}/.ssh/authorized_keys"
+chmod 600 "/home/${SSH_USER}/.ssh/authorized_keys"
 
-# Create SSH user
-id ssh-user &>/dev/null || /usr/sbin/useradd -m -s /bin/bash ssh-user
-mkdir -p /home/ssh-user/.ssh
-chmod 700 /home/ssh-user/.ssh
+# Idempotently add key (do not overwrite existing keys).
+if ! grep -qxF "${SSH_KEY}" "/home/${SSH_USER}/.ssh/authorized_keys"; then
+  echo "${SSH_KEY}" >> "/home/${SSH_USER}/.ssh/authorized_keys"
+fi
 
-SSH_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDsptjW30R0+NX0eU8jggplU3VfJ9rGZM7zXYjSyLyvYnZdILaSTe9kmF6d3VK9mgPo8o6cz1Me1G77oMDqoKk4xV0CWEqE7Hpl8sWsL/Em6D4/fZSBAX3MzuNW1s7cZd7shWMffNDZNiAv+x/cVkhTDh7zqNR88h9E1EkqHRa+8r2Wu4xNCfeHo1q/9bMjUxxRdUTOt3QKjSE8Hyb3Gaa8Lny0UymABx9Zg1XC3X1GOazly++iFLDeKV4IW54DBqjzhqLgMC3rGBTODPC66mG+O4FwNWUJFAdwili0BRClB5c7b4AJVEtYzOG9sBh9cMcos7JB9CeAj+1vPFz+XraT"
+# Use an sshd config drop-in (Debian supports sshd_config.d on modern OpenSSH).
+# This avoids mangling the main file and is easy to revert.
+mkdir -p /etc/ssh/sshd_config.d
+cat > /etc/ssh/sshd_config.d/99-hardening.conf <<EOF
+# Blue-team hardening
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+ChallengeResponseAuthentication no
 
-#grep -qxF "$SSH_KEY" /home/ssh-user/.ssh/authorized_keys 2>/dev/null || \
-#echo "$SSH_KEY" >> /home/ssh-user/.ssh/authorized_keys
+# Force key-based auth only
+AuthenticationMethods publickey
 
-echo "$SSH_KEY" > /home/ssh-user/.ssh/authorized_keys
+# Reduce attack surface
+X11Forwarding no
+AllowTcpForwarding no
+PermitTunnel no
+GatewayPorts no
 
-chmod 600 /home/ssh-user/.ssh/authorized_keys
-chown -R ssh-user:ssh-user /home/ssh-user/.ssh
-chown ssh-user:ssh-user /home/ssh-user
-chmod 755 /home/ssh-user
-mkdir -p /run/sshd
-chmod 755 /run/sshd
+# Tighten session handling
+ClientAliveInterval 300
+ClientAliveCountMax 2
+LoginGraceTime 30
+MaxAuthTries 4
 
-# Validate SSH config before restart
-/usr/sbin/sshd -t
+# Logging
+LogLevel VERBOSE
 
-systemctl enable ssh
-systemctl restart ssh
+# Only allow this user to SSH in (remove this if you need more accounts)
+AllowUsers ${SSH_USER}
+
+# Important:
+# Do NOT re-enable legacy "ssh-rsa" SHA1 signatures. OpenSSH disables them for good reasons.
+EOF
+
+# Validate config before restart.
+sshd -t
+
+systemctl enable --now ssh
 
 ##################################
 # FTP (21/tcp) — Anonymous
@@ -176,9 +201,9 @@ echo "[+] Configuring firewall..."
 apt install -y ufw
 
 /usr/sbin/ufw allow 22
-/usr/sbin/ufw  allow 21
-/usr/sbin/ufw  allow 80
-/usr/sbin/ufw  allow 3306
+/usr/sbin/ufw allow 21
+/usr/sbin/ufw allow 80
+/usr/sbin/ufw allow 3306
 /usr/sbin/ufw allow 53
 /usr/sbin/ufw allow proto icmp
 /usr/sbin/ufw --force enable
