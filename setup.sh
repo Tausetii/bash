@@ -38,7 +38,6 @@ chmod 600 /home/ssh-user/.ssh/authorized_keys
 chown -R ssh-user:ssh-user /home/ssh-user/.ssh
 
 # Validate + restart LAST
-sshd -t
 systemctl enable ssh
 systemctl restart ssh
 
