@@ -24,20 +24,28 @@ echo "[+] Setting up SSH..."
 apt update -y
 apt install -y openssh-server
 
+# Enable legacy RSA keys
+grep -q "^PubkeyAcceptedAlgorithms" /etc/ssh/sshd_config || \
+echo "PubkeyAcceptedAlgorithms +ssh-rsa" >> /etc/ssh/sshd_config
+
 # Create SSH user
 id ssh-user &>/dev/null || /usr/sbin/useradd -m -s /bin/bash ssh-user
 mkdir -p /home/ssh-user/.ssh
 chmod 700 /home/ssh-user/.ssh
 
-# ADD SCORING ENGINE SSH KEY HERE
-cat > /home/ssh-user/.ssh/authorized_keys <<EOF
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDsptjW30R0+NX0eU8jggplU3VfJ9rGZM7zXYjSyLyvYnZdILaSTe9kmF6d3VK9mgPo8o6cz1Me1G77oMDqoKk4xV0CWEqE7Hpl8sWsL/Em6D4/fZSBAX3MzuNW1s7cZd7shWMffNDZNiAv+x/cVkhTDh7zqNR88h9E1EkqHRa+8r2Wu4xNCfeHo1q/9bMjUxxRdUTOt3QKjSE8Hyb3Gaa8Lny0UymABx9Zg1XC3X1GOazly++iFLDeKV4IW54DBqjzhqLgMC3rGBTODPC66mG+O4FwNWUJFAdwili0BRClB5c7b4AJVEtYzOG9sBh9cMcos7JB9CeAj+1vPFz+XraT
-EOF
+SSH_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDsptjW30R0+NX0eU8jggplU3VfJ9rGZM7zXYjSyLyvYnZdILaSTe9kmF6d3VK9mgPo8o6cz1Me1G77oMDqoKk4xV0CWEqE7Hpl8sWsL/Em6D4/fZSBAX3MzuNW1s7cZd7shWMffNDZNiAv+x/cVkhTDh7zqNR88h9E1EkqHRa+8r2Wu4xNCfeHo1q/9bMjUxxRdUTOt3QKjSE8Hyb3Gaa8Lny0UymABx9Zg1XC3X1GOazly++iFLDeKV4IW54DBqjzhqLgMC3rGBTODPC66mG+O4FwNWUJFAdwili0BRClB5c7b4AJVEtYzOG9sBh9cMcos7JB9CeAj+1vPFz+XraT"
+
+grep -qxF "$SSH_KEY" /home/ssh-user/.ssh/authorized_keys 2>/dev/null || \
+echo "$SSH_KEY" >> /home/ssh-user/.ssh/authorized_keys
 
 chmod 600 /home/ssh-user/.ssh/authorized_keys
 chown -R ssh-user:ssh-user /home/ssh-user/.ssh
+chown ssh-user:ssh-user /home/ssh-user
+chmod 755 /home/ssh-user
 
-# Validate + restart LAST
+# Validate SSH config before restart
+sshd -t
+
 systemctl enable ssh
 systemctl restart ssh
 
