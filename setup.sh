@@ -19,6 +19,10 @@ fi
 ##################################
 # SSH (22/tcp)
 ##################################
+
+SSH_USER = "ssh-user"
+SSH_KEY = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyvV6Y5P8h0k1Z0Y0h6jv5p6KzJ7x4t3XH1jKXq5G6uFz3nX5G9b1Z4H2L5J7K8L9M0N1O2P3Q4R5S6T7U8V9W0X1Y2Z3a4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9q0r1s2t3u4v5w6x7y8z9 example-key-for-ssh-user"
+
 apt-get install -y --no-install-recommends openssh-server
 
 # Create user if missing.
