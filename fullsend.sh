@@ -62,7 +62,7 @@ net.ipv4.icmp_echo_ignore_all=0
 EOF
 
 # Apply immediately.
-sysctl --system >/dev/null
+/usr/sbin/sysctl --system >/dev/null
 
 ##################################
 # SSH (22/tcp)
@@ -73,7 +73,7 @@ apt-get install -y --no-install-recommends openssh-server
 
 # Create user if missing.
 if ! id "${SSH_USER}" &>/dev/null; then
-  useradd -m -s /bin/bash "${SSH_USER}"
+  /usr/sbin/useradd -m -s /bin/bash "${SSH_USER}"
   passwd -l "${SSH_USER}" >/dev/null 2>&1 || true   # lock password so it cannot be used for password login
 fi
 
@@ -124,7 +124,7 @@ AllowUsers ${SSH_USER}
 EOF
 
 # Validate config before restart.
-sshd -t
+/usr/sbin/sshd -t
 
 systemctl enable --now ssh
 
@@ -304,43 +304,43 @@ fi
 ##################################
 log "Configuring UFW firewall (deny inbound by default)..."
 
-ufw --force reset
-ufw default deny incoming
-ufw default allow outgoing
+/usr/sbin/ufw --force reset
+/usr/sbin/ufw default deny incoming
+/usr/sbin/ufw default allow outgoing
 
 # SSH: allow from management CIDRs, rate-limited.
 for cidr in "${SSH_ALLOWED_CIDRS[@]}"; do
-  ufw limit from "${cidr}" to any port 22 proto tcp
+  /usr/sbin/ufw limit from "${cidr}" to any port 22 proto tcp
 done
 
 # HTTP
 if [[ "${ENABLE_HTTP}" -eq 1 ]]; then
-  ufw allow 80/tcp
+  /usr/sbin/ufw allow 80/tcp
 fi
 
 # DNS
 if [[ "${ENABLE_DNS}" -eq 1 ]]; then
-  ufw allow 53/udp
-  ufw allow 53/tcp
+  /usr/sbin/ufw allow 53/udp
+  /usr/sbin/ufw allow 53/tcp
 fi
 
 # DB: only if remote enabled
 if [[ "${ENABLE_REMOTE_DB}" -eq 1 ]]; then
   # If you need this, restrict it hard (example: allow from your scoring subnet only).
   # Replace 0.0.0.0/0 with a real CIDR.
-  ufw allow from 0.0.0.0/0 to any port 3306 proto tcp
+  /usr/sbin/ufw allow from 0.0.0.0/0 to any port 3306 proto tcp
 fi
 
 # FTP: only if enabled
 if [[ "${ENABLE_FTP}" -eq 1 ]]; then
-  ufw allow 21/tcp
+  /usr/sbin/ufw allow 21/tcp
 fi
 
 # ICMP: do NOT use "ufw allow proto icmp" (not supported in CLI). :contentReference[oaicite:7]{index=7}
 # We already enabled ping replies via sysctl. UFW typically allows relevant ICMP in before.rules.
 # If you later tighten ICMP, edit /etc/ufw/before.rules with explicit ICMP allowances.
 
-ufw --force enable
+/usr/sbin/ufw --force enable
 
 ##################################
 # Fail2ban and unattended upgrades
