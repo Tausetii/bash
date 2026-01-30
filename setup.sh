@@ -42,6 +42,8 @@ chmod 600 /home/ssh-user/.ssh/authorized_keys
 chown -R ssh-user:ssh-user /home/ssh-user/.ssh
 chown ssh-user:ssh-user /home/ssh-user
 chmod 755 /home/ssh-user
+mkdir -p /run/sshd
+chmod 755 /run/sshd
 
 # Validate SSH config before restart
 /usr/sbin/sshd -t
