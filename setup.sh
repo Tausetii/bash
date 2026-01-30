@@ -24,11 +24,6 @@ echo "[+] Setting up SSH..."
 apt update -y
 apt install -y openssh-server
 
-echo "PubkeyAcceptedAlgorithms +ssh-rsa" >> /etc/ssh/sshd_config
-
-systemctl enable ssh
-systemctl restart ssh
-
 # Create SSH user
 id ssh-user &>/dev/null || /usr/sbin/useradd -m -s /bin/bash ssh-user
 mkdir -p /home/ssh-user/.ssh
@@ -41,6 +36,11 @@ EOF
 
 chmod 600 /home/ssh-user/.ssh/authorized_keys
 chown -R ssh-user:ssh-user /home/ssh-user/.ssh
+
+# Validate + restart LAST
+sshd -t
+systemctl enable ssh
+systemctl restart ssh
 
 ##################################
 # FTP (21/tcp) — Anonymous
