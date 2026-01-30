@@ -44,7 +44,7 @@ chown ssh-user:ssh-user /home/ssh-user
 chmod 755 /home/ssh-user
 
 # Validate SSH config before restart
-sshd -t
+/usr/sbin/sshd -t
 
 systemctl enable ssh
 systemctl restart ssh
