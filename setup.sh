@@ -19,33 +19,30 @@ fi
 ##################################
 # SSH (22/tcp)
 ##################################
-echo "[+] Setting up SSH..."
-
 apt update -y
 apt install -y openssh-server
 
-# Enable legacy RSA keys
+# Enable legacy RSA
 grep -q "^PubkeyAcceptedAlgorithms" /etc/ssh/sshd_config || \
 echo "PubkeyAcceptedAlgorithms +ssh-rsa" >> /etc/ssh/sshd_config
 
-# Create SSH user
-id ssh-user &>/dev/null || /usr/sbin/useradd -m -s /bin/bash ssh-user
+# Ensure SSH listens on all interfaces
+sed -i 's/^#Port 22/Port 22/' /etc/ssh/sshd_config
+sed -i 's/^#ListenAddress 0.0.0.0/ListenAddress 0.0.0.0/' /etc/ssh/sshd_config
+
+# Create user and authorized key
+id ssh-user &>/dev/null || useradd -m -s /bin/bash ssh-user
 mkdir -p /home/ssh-user/.ssh
 chmod 700 /home/ssh-user/.ssh
 
 SSH_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDsptjW30R0+NX0eU8jggplU3VfJ9rGZM7zXYjSyLyvYnZdILaSTe9kmF6d3VK9mgPo8o6cz1Me1G77oMDqoKk4xV0CWEqE7Hpl8sWsL/Em6D4/fZSBAX3MzuNW1s7cZd7shWMffNDZNiAv+x/cVkhTDh7zqNR88h9E1EkqHRa+8r2Wu4xNCfeHo1q/9bMjUxxRdUTOt3QKjSE8Hyb3Gaa8Lny0UymABx9Zg1XC3X1GOazly++iFLDeKV4IW54DBqjzhqLgMC3rGBTODPC66mG+O4FwNWUJFAdwili0BRClB5c7b4AJVEtYzOG9sBh9cMcos7JB9CeAj+1vPFz+XraT"
-
-#grep -qxF "$SSH_KEY" /home/ssh-user/.ssh/authorized_keys 2>/dev/null || \
-#echo "$SSH_KEY" >> /home/ssh-user/.ssh/authorized_keys
-
 echo "$SSH_KEY" > /home/ssh-user/.ssh/authorized_keys
-
 chmod 600 /home/ssh-user/.ssh/authorized_keys
 chown -R ssh-user:ssh-user /home/ssh-user/.ssh
-chown ssh-user:ssh-user /home/ssh-user
-chmod 755 /home/ssh-user
+
+# Start SSH server in foreground (suitable for containers)
 mkdir -p /run/sshd
-chmod 755 /run/sshd
+/usr/sbin/sshd -D &
 
 # Validate SSH config before restart
 /usr/sbin/sshd -t
