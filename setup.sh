@@ -23,7 +23,7 @@ apt-get install -y --no-install-recommends openssh-server
 
 # Create user if missing.
 if ! id "${SSH_USER}" &>/dev/null; then
-  usr/sbin/useradd -m -s /bin/bash "${SSH_USER}"
+  /usr/sbin/useradd -m -s /bin/bash "${SSH_USER}"
   passwd -l "${SSH_USER}" >/dev/null 2>&1 || true   # lock password so it cannot be used for password login
 fi
 
@@ -74,7 +74,7 @@ AllowUsers ${SSH_USER}
 EOF
 
 # Validate config before restart.
-usr/sbin/sshd -t
+/usr/sbin/sshd -t
 
 systemctl enable --now ssh
 
