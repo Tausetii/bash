@@ -174,13 +174,14 @@ systemctl restart named
 echo "[+] Configuring firewall..."
 
 apt install -y ufw
-ufw allow 22
-ufw allow 21
-ufw allow 80
-ufw allow 3306
-ufw allow 53
-ufw allow proto icmp
-ufw --force enable
+
+/usr/sbin/ufw allow 22
+/usr/sbin/ufw  allow 21
+/usr/sbin/ufw  allow 80
+/usr/sbin/ufw  allow 3306
+/usr/sbin/ufw allow 53
+/usr/sbin/ufw allow proto icmp
+/usr/sbin/ufw --force enable
 
 ##################################
 # DONE
