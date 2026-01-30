@@ -24,6 +24,8 @@ echo "[+] Setting up SSH..."
 apt update -y
 apt install -y openssh-server
 
+echo "PubkeyAcceptedAlgorithms +ssh-rsa" >> /etc/ssh/sshd_config
+
 systemctl enable ssh
 systemctl restart ssh
 
