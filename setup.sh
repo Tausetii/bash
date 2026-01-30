@@ -28,7 +28,7 @@ systemctl enable ssh
 systemctl restart ssh
 
 # Create SSH user
-id ssh-user &>/dev/null || useradd -m -s /bin/bash ssh-user
+id ssh-user &>/dev/null || /usr/sbin/useradd -m -s /bin/bash ssh-user
 mkdir -p /home/ssh-user/.ssh
 chmod 700 /home/ssh-user/.ssh
 
