@@ -138,6 +138,9 @@ echo "[+] Configuring firewall..."
 
 apt install -y ufw
 
+/usr/sbin/ufw default deny incoming
+/usr/sbin/ufw default allow outgoing
+
 /usr/sbin/ufw allow 22
 /usr/sbin/ufw allow 21
 /usr/sbin/ufw allow 80
